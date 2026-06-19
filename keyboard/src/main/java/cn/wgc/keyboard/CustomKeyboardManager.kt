@@ -7,12 +7,19 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
+import android.view.ActionMode
 import android.text.method.PasswordTransformationMethod
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.SearchEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,6 +27,7 @@ import java.util.WeakHashMap
 
 object CustomKeyboardManager {
     private val controllers = WeakHashMap<Activity, Controller>()
+    private val dismissInstallers = WeakHashMap<Activity, OutsideDismissWindowCallback>()
 
     fun showFor(editText: CustomKeyboardEditText) {
         val activity = editText.context.findActivity() ?: return
@@ -30,6 +38,21 @@ object CustomKeyboardManager {
     fun hide(editText: CustomKeyboardEditText) {
         val activity = editText.context.findActivity() ?: return
         controllers[activity]?.hide()
+    }
+
+    fun installDismissOnOutsideTouch(
+        activity: Activity,
+        options: KeyboardDismissOptions = KeyboardDismissOptions()
+    ) {
+        val existing = dismissInstallers[activity]
+        if (existing != null) {
+            existing.options = options
+            return
+        }
+
+        val callback = OutsideDismissWindowCallback(activity, activity.window.callback, options)
+        activity.window.callback = callback
+        dismissInstallers[activity] = callback
     }
 
     private fun Context.findActivity(): Activity? {
@@ -54,6 +77,7 @@ object CustomKeyboardManager {
         private var activeEditText: CustomKeyboardEditText? = null
         private var navBottom = 0
         private var forwardingEditText: CustomKeyboardEditText? = null
+        private var forwardingSystemEditText: EditText? = null
 
         private val gestureNavFillView = View(activity).apply {
             visibility = View.GONE
@@ -73,6 +97,11 @@ object CustomKeyboardManager {
                     forwardingEditText = activeEditText
                         ?.takeIf { it.containsRawPoint(x, y) }
                         ?: pageContent?.findKeyboardEditTextAt(x, y)
+                    forwardingSystemEditText = if (forwardingEditText == null) {
+                        pageContent?.findSystemEditTextAt(x, y)
+                    } else {
+                        null
+                    }
                 }
 
                 val target = forwardingEditText
@@ -84,6 +113,23 @@ object CustomKeyboardManager {
                     target.dispatchTouchFromOverlay(event)
                     if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
                         forwardingEditText = null
+                    }
+                } else if (forwardingSystemEditText != null) {
+                    val systemTarget = forwardingSystemEditText
+                    if (action == MotionEvent.ACTION_DOWN) {
+                        hide()
+                        systemTarget?.requestFocus()
+                    }
+                    systemTarget?.dispatchTouchFromOverlay(event)
+                    if (action == MotionEvent.ACTION_UP) {
+                        systemTarget?.post {
+                            val inputMethodManager =
+                                systemTarget.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                            inputMethodManager?.showSoftInput(systemTarget, 0)
+                        }
+                        forwardingSystemEditText = null
+                    } else if (action == MotionEvent.ACTION_CANCEL) {
+                        forwardingSystemEditText = null
                     }
                 } else if (action == MotionEvent.ACTION_DOWN) {
                     activeEditText?.clearFocus()
@@ -280,7 +326,31 @@ object CustomKeyboardManager {
             return null
         }
 
+        private fun View.findSystemEditTextAt(x: Int, y: Int): EditText? {
+            if (!containsRawPoint(x, y)) return null
+            if (this is EditText && this !is CustomKeyboardEditText) return this
+            if (this is ViewGroup) {
+                for (index in childCount - 1 downTo 0) {
+                    val found = getChildAt(index).findSystemEditTextAt(x, y)
+                    if (found != null) return found
+                }
+            }
+            return null
+        }
+
         private fun CustomKeyboardEditText.dispatchTouchFromOverlay(event: MotionEvent) {
+            val location = IntArray(2)
+            getLocationOnScreen(location)
+            val forwarded = MotionEvent.obtain(event)
+            forwarded.setLocation(
+                event.rawX - location[0],
+                event.rawY - location[1]
+            )
+            dispatchTouchEvent(forwarded)
+            forwarded.recycle()
+        }
+
+        private fun EditText.dispatchTouchFromOverlay(event: MotionEvent) {
             val location = IntArray(2)
             getLocationOnScreen(location)
             val forwarded = MotionEvent.obtain(event)
@@ -305,5 +375,82 @@ object CustomKeyboardManager {
             val density = keyboardView.resources.displayMetrics.density
             return (value * density + 0.5f).toInt()
         }
+    }
+
+    private class OutsideDismissWindowCallback(
+        private val activity: Activity,
+        private val delegate: Window.Callback,
+        var options: KeyboardDismissOptions
+    ) : Window.Callback {
+
+        override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                handleOutsideTouch(event)
+            }
+            return delegate.dispatchTouchEvent(event)
+        }
+
+        private fun handleOutsideTouch(event: MotionEvent) {
+            val focusedView = activity.currentFocus ?: return
+            if (focusedView !is EditText || focusedView is CustomKeyboardEditText) return
+            if (!options.dismissSystemKeyboard) return
+
+            val x = event.rawX.toInt()
+            val y = event.rawY.toInt()
+            val navBottom = ViewCompat.getRootWindowInsets(activity.window.decorView)
+                ?.getInsets(WindowInsetsCompat.Type.navigationBars())
+                ?.bottom ?: 0
+            val inNavigationBar = navBottom > 0 && y >= activity.window.decorView.height - navBottom
+            if (inNavigationBar || focusedView.containsRawPoint(x, y)) return
+
+            val inputMethodManager = focusedView.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            inputMethodManager?.hideSoftInputFromWindow(focusedView.windowToken, 0)
+            if (options.clearSystemEditTextFocus) {
+                focusedView.clearFocus()
+            }
+        }
+
+        private fun View.containsRawPoint(x: Int, y: Int): Boolean {
+            val rect = Rect()
+            getGlobalVisibleRect(rect)
+            return rect.contains(x, y)
+        }
+
+        override fun dispatchKeyEvent(event: KeyEvent): Boolean = delegate.dispatchKeyEvent(event)
+        override fun dispatchKeyShortcutEvent(event: KeyEvent): Boolean = delegate.dispatchKeyShortcutEvent(event)
+        override fun dispatchTrackballEvent(event: MotionEvent): Boolean = delegate.dispatchTrackballEvent(event)
+        override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean = delegate.dispatchGenericMotionEvent(event)
+        override fun dispatchPopulateAccessibilityEvent(event: AccessibilityEvent): Boolean =
+            delegate.dispatchPopulateAccessibilityEvent(event)
+
+        override fun onCreatePanelView(featureId: Int): View? = delegate.onCreatePanelView(featureId)
+        override fun onCreatePanelMenu(featureId: Int, menu: android.view.Menu): Boolean =
+            delegate.onCreatePanelMenu(featureId, menu)
+
+        override fun onPreparePanel(featureId: Int, view: View?, menu: android.view.Menu): Boolean =
+            delegate.onPreparePanel(featureId, view, menu)
+
+        override fun onMenuOpened(featureId: Int, menu: android.view.Menu): Boolean = delegate.onMenuOpened(featureId, menu)
+        override fun onMenuItemSelected(featureId: Int, item: android.view.MenuItem): Boolean =
+            delegate.onMenuItemSelected(featureId, item)
+
+        override fun onWindowAttributesChanged(attrs: WindowManager.LayoutParams) =
+            delegate.onWindowAttributesChanged(attrs)
+
+        override fun onContentChanged() = delegate.onContentChanged()
+        override fun onWindowFocusChanged(hasFocus: Boolean) = delegate.onWindowFocusChanged(hasFocus)
+        override fun onAttachedToWindow() = delegate.onAttachedToWindow()
+        override fun onDetachedFromWindow() = delegate.onDetachedFromWindow()
+        override fun onPanelClosed(featureId: Int, menu: android.view.Menu) = delegate.onPanelClosed(featureId, menu)
+        override fun onSearchRequested(): Boolean = delegate.onSearchRequested()
+        override fun onSearchRequested(searchEvent: SearchEvent): Boolean = delegate.onSearchRequested(searchEvent)
+        override fun onWindowStartingActionMode(callback: ActionMode.Callback): ActionMode? =
+            delegate.onWindowStartingActionMode(callback)
+
+        override fun onWindowStartingActionMode(callback: ActionMode.Callback, type: Int): ActionMode? =
+            delegate.onWindowStartingActionMode(callback, type)
+
+        override fun onActionModeStarted(mode: ActionMode) = delegate.onActionModeStarted(mode)
+        override fun onActionModeFinished(mode: ActionMode) = delegate.onActionModeFinished(mode)
     }
 }

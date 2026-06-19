@@ -172,6 +172,16 @@
             app:ck_shiftActiveIcon="@drawable/ic_demo_shift_active"
             app:ck_shiftIcon="@drawable/ic_demo_shift" />
 
+        <EditText
+            android:id="@+id/systemEditText"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="18dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="普通EditText，用于验证系统键盘外部收起"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp" />
+
         <Space
             android:layout_width="match_parent"
             android:layout_height="420dp" />
