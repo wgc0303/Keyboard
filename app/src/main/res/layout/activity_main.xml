@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Custom Keyboard Demo"
+            android:textColor="#111827"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/numberInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="22dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="数字键盘"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="number" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/idCardInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="18dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="身份证键盘"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="idCard" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/passwordInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="18dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="数字密码键盘"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_keyGap="0dp"
+            app:ck_randomNumberKeys="true"
+            app:ck_keyboardType="numberPassword" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/alphaNumberInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="18dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="字母数字键盘（禁用点号）"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_disableDot="true"
+            app:ck_disableSpace="true"
+            app:ck_alphaInitialMode="letter"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="alphaNumber" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="420dp" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/bottomInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="底部输入框，用于验证遮挡顶起"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="alphaNumber" />
+
+    </LinearLayout>
+</ScrollView>

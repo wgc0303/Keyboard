@@ -1,0 +1,189 @@
+package cn.wgc.keyboard
+
+import android.content.Context
+import android.text.InputFilter
+import android.text.Spanned
+import android.text.InputType
+import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.widget.AppCompatEditText
+import cn.wgc.keyboard.library.R
+
+class CustomKeyboardEditText @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = android.R.attr.editTextStyle
+) : AppCompatEditText(context, attrs, defStyleAttr) {
+
+    private var keyboardInputFilter: InputFilter? = null
+
+    var keyboardType: CustomKeyboardType = CustomKeyboardType.NUMBER
+        set(value) {
+            field = value
+            configureInputType()
+            applyKeyboardFilter()
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
+    var keyGap: Int = 0
+        set(value) {
+            field = value
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
+    var disableSpace: Boolean = false
+        set(value) {
+            field = value
+            applyKeyboardFilter()
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
+    var disableDot: Boolean = false
+        set(value) {
+            field = value
+            applyKeyboardFilter()
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
+    var alphaInitialMode: AlphaKeyboardInitialMode = AlphaKeyboardInitialMode.NUMBER
+        set(value) {
+            field = value
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
+    var randomNumberKeys: Boolean = false
+        set(value) {
+            field = value
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
+    var passwordVisible: Boolean = false
+        internal set
+
+    init {
+        keyboardInputFilter = KeyboardInputFilter()
+        val array = context.obtainStyledAttributes(attrs, R.styleable.CustomKeyboardEditText, defStyleAttr, 0)
+        keyboardType = CustomKeyboardType.fromAttr(array.getInt(R.styleable.CustomKeyboardEditText_ck_keyboardType, 0))
+        keyGap = array.getDimensionPixelSize(R.styleable.CustomKeyboardEditText_ck_keyGap, 0)
+        disableSpace = array.getBoolean(R.styleable.CustomKeyboardEditText_ck_disableSpace, false)
+        disableDot = array.getBoolean(R.styleable.CustomKeyboardEditText_ck_disableDot, false)
+        alphaInitialMode = AlphaKeyboardInitialMode.fromAttr(
+            array.getInt(R.styleable.CustomKeyboardEditText_ck_alphaInitialMode, 0)
+        )
+        randomNumberKeys = array.getBoolean(R.styleable.CustomKeyboardEditText_ck_randomNumberKeys, false)
+        array.recycle()
+
+        showSoftInputOnFocus = false
+        configureInputType()
+        applyKeyboardFilter()
+    }
+
+    override fun setFilters(filters: Array<out InputFilter>?) {
+        val keyboardFilter = keyboardInputFilter
+        if (keyboardFilter == null) {
+            super.setFilters(filters)
+            return
+        }
+        val externalFilters = filters
+            ?.filterNot { it === keyboardFilter }
+            ?.toTypedArray()
+            ?: emptyArray()
+        super.setFilters(externalFilters + keyboardFilter)
+    }
+
+    override fun onFocusChanged(focused: Boolean, direction: Int, previouslyFocusedRect: android.graphics.Rect?) {
+        super.onFocusChanged(focused, direction, previouslyFocusedRect)
+        if (focused) {
+            CustomKeyboardManager.showFor(this)
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        showSoftInputOnFocus = false
+        val handled = super.onTouchEvent(event)
+        if (event.action == MotionEvent.ACTION_UP && hasFocus()) {
+            CustomKeyboardManager.showFor(this)
+        }
+        return handled
+    }
+
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        super.onWindowFocusChanged(hasWindowFocus)
+        showSoftInputOnFocus = false
+        if (hasWindowFocus && hasFocus()) {
+            hideSystemKeyboard()
+            postDelayed({ hideSystemKeyboard() }, 80L)
+            CustomKeyboardManager.showFor(this)
+        }
+    }
+
+    private fun configureInputType() {
+        inputType = when (keyboardType) {
+            CustomKeyboardType.NUMBER_PASSWORD -> InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            CustomKeyboardType.ALPHA_NUMBER -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            else -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+        showSoftInputOnFocus = false
+    }
+
+    private fun applyKeyboardFilter() {
+        filters = filters
+    }
+
+    private fun hideSystemKeyboard() {
+        val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        inputMethodManager?.hideSoftInputFromWindow(windowToken, 0)
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
+
+    private inner class KeyboardInputFilter : InputFilter {
+        override fun filter(
+            source: CharSequence,
+            start: Int,
+            end: Int,
+            dest: Spanned,
+            dstart: Int,
+            dend: Int
+        ): CharSequence? {
+            if (source.isEmpty()) return null
+
+            val builder = StringBuilder(end - start)
+            var changed = false
+            for (index in start until end) {
+                val char = source[index]
+                val accepted = normalizeAcceptedChar(char)
+                if (accepted == null) {
+                    changed = true
+                } else {
+                    builder.append(accepted)
+                    if (accepted != char) changed = true
+                }
+            }
+
+            return if (!changed) null else builder.toString()
+        }
+
+        private fun normalizeAcceptedChar(char: Char): Char? {
+            return when (keyboardType) {
+                CustomKeyboardType.NUMBER,
+                CustomKeyboardType.NUMBER_PASSWORD -> char.takeIf { it in '0'..'9' }
+
+                CustomKeyboardType.ID_CARD -> when {
+                    char in '0'..'9' -> char
+                    char == 'x' || char == 'X' -> 'X'
+                    else -> null
+                }
+
+                CustomKeyboardType.ALPHA_NUMBER -> when {
+                    char in '0'..'9' -> char
+                    char in 'a'..'z' || char in 'A'..'Z' -> char
+                    char == ' ' && !disableSpace -> char
+                    char == '.' && !disableDot -> char
+                    else -> null
+                }
+            }
+        }
+    }
+}

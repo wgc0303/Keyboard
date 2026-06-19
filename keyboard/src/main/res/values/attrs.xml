@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CustomKeyboardEditText">
+        <attr name="ck_keyboardType" format="enum">
+            <enum name="number" value="0" />
+            <enum name="idCard" value="1" />
+            <enum name="numberPassword" value="2" />
+            <enum name="alphaNumber" value="3" />
+        </attr>
+        <attr name="ck_keyGap" format="dimension" />
+        <attr name="ck_disableSpace" format="boolean" />
+        <attr name="ck_disableDot" format="boolean" />
+        <attr name="ck_alphaInitialMode" format="enum">
+            <enum name="number" value="0" />
+            <enum name="letter" value="1" />
+        </attr>
+        <attr name="ck_randomNumberKeys" format="boolean" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,280 @@
+package cn.wgc.keyboard
+
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
+import android.text.method.PasswordTransformationMethod
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import java.util.WeakHashMap
+
+object CustomKeyboardManager {
+    private val controllers = WeakHashMap<Activity, Controller>()
+
+    fun showFor(editText: CustomKeyboardEditText) {
+        val activity = editText.context.findActivity() ?: return
+        val controller = controllers.getOrPut(activity) { Controller(activity) }
+        controller.show(editText)
+    }
+
+    fun hide(editText: CustomKeyboardEditText) {
+        val activity = editText.context.findActivity() ?: return
+        controllers[activity]?.hide()
+    }
+
+    private fun Context.findActivity(): Activity? {
+        var current = this
+        while (current is ContextWrapper) {
+            if (current is Activity) return current
+            current = current.baseContext
+        }
+        return null
+    }
+
+    private class Controller(activity: Activity) : CustomKeyboardView.Listener {
+        private val contentRoot = activity.findViewById<FrameLayout>(android.R.id.content)
+        private val pageContent: View? = contentRoot.getChildAt(0)
+        private val handler = Handler(Looper.getMainLooper())
+        private val deleteRunnable = object : Runnable {
+            override fun run() {
+                deleteOnce()
+                handler.postDelayed(this, 55L)
+            }
+        }
+        private var activeEditText: CustomKeyboardEditText? = null
+        private var navBottom = 0
+        private var forwardingEditText: CustomKeyboardEditText? = null
+
+        private val touchOverlay = View(activity).apply {
+            visibility = View.GONE
+            isClickable = true
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            setOnTouchListener { _, event ->
+                val action = event.actionMasked
+                if (action == MotionEvent.ACTION_DOWN) {
+                    val x = event.rawX.toInt()
+                    val y = event.rawY.toInt()
+                    forwardingEditText = activeEditText
+                        ?.takeIf { it.containsRawPoint(x, y) }
+                        ?: pageContent?.findKeyboardEditTextAt(x, y)
+                }
+
+                val target = forwardingEditText
+                if (target != null) {
+                    if (action == MotionEvent.ACTION_DOWN) {
+                        target.requestFocus()
+                        show(target)
+                    }
+                    target.dispatchTouchFromOverlay(event)
+                    if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                        forwardingEditText = null
+                    }
+                } else if (action == MotionEvent.ACTION_DOWN) {
+                    activeEditText?.clearFocus()
+                    hide()
+                }
+                true
+            }
+        }
+
+        private val keyboardView = CustomKeyboardView(activity).apply {
+            visibility = View.GONE
+            listener = this@Controller
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateOverlayBounds() }
+        }
+
+        init {
+            contentRoot.addView(
+                touchOverlay,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+            contentRoot.addView(
+                keyboardView,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.BOTTOM
+                )
+            )
+            ViewCompat.setOnApplyWindowInsetsListener(contentRoot) { _, insets ->
+                navBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+                updateKeyboardBottom()
+                updateOverlayBounds()
+                insets
+            }
+            ViewCompat.requestApplyInsets(contentRoot)
+        }
+
+        fun show(editText: CustomKeyboardEditText) {
+            val targetChanged = activeEditText !== editText
+            activeEditText = editText
+            updateKeyboardBottom()
+            keyboardView.visibility = View.VISIBLE
+            keyboardView.configure(
+                type = editText.keyboardType,
+                keyGap = editText.keyGap,
+                passwordVisible = editText.passwordVisible,
+                disableSpace = editText.disableSpace,
+                disableDot = editText.disableDot,
+                alphaInitialMode = editText.alphaInitialMode,
+                resetAlphaMode = targetChanged,
+                randomNumberKeys = editText.randomNumberKeys
+            )
+            hideSystemKeyboard(editText)
+            keyboardView.post {
+                keyboardView.ensureReadyAfterShown()
+                updateOverlayBounds()
+                touchOverlay.visibility = View.VISIBLE
+                liftContentIfNeeded()
+            }
+        }
+
+        fun hide() {
+            stopContinuousDelete()
+            keyboardView.visibility = View.GONE
+            touchOverlay.visibility = View.GONE
+            activeEditText = null
+            pageContent?.animate()?.translationY(0f)?.setDuration(120L)?.start()
+        }
+
+        override fun onText(text: String) {
+            val editText = activeEditText ?: return
+            val start = editText.selectionStart.coerceAtLeast(0)
+            val end = editText.selectionEnd.coerceAtLeast(0)
+            val min = minOf(start, end)
+            val max = maxOf(start, end)
+            editText.text?.replace(min, max, text)
+        }
+
+        override fun onDeleteDown() {
+            deleteOnce()
+            handler.postDelayed(deleteRunnable, 420L)
+        }
+
+        override fun onDeleteUp() {
+            stopContinuousDelete()
+        }
+
+        override fun onHide() {
+            activeEditText?.clearFocus()
+            hide()
+        }
+
+        override fun onTogglePassword() {
+            val editText = activeEditText ?: return
+            editText.passwordVisible = !editText.passwordVisible
+            editText.transformationMethod = if (editText.passwordVisible) null else PasswordTransformationMethod.getInstance()
+            editText.setSelection(editText.text?.length ?: 0)
+            keyboardView.setPasswordVisible(editText.passwordVisible)
+        }
+
+        override fun onKeyboardChanged() {
+            keyboardView.post { liftContentIfNeeded() }
+        }
+
+        private fun deleteOnce() {
+            val editText = activeEditText ?: return
+            val text = editText.text ?: return
+            val start = editText.selectionStart.coerceAtLeast(0)
+            val end = editText.selectionEnd.coerceAtLeast(0)
+            if (start != end) {
+                text.delete(minOf(start, end), maxOf(start, end))
+            } else if (start > 0) {
+                text.delete(start - 1, start)
+            }
+        }
+
+        private fun stopContinuousDelete() {
+            handler.removeCallbacks(deleteRunnable)
+        }
+
+        private fun updateKeyboardBottom() {
+            val params = keyboardView.layoutParams as? FrameLayout.LayoutParams ?: return
+            params.gravity = Gravity.BOTTOM
+            params.bottomMargin = navBottom
+            keyboardView.layoutParams = params
+        }
+
+        private fun updateOverlayBounds() {
+            val params = touchOverlay.layoutParams as? FrameLayout.LayoutParams ?: return
+            params.gravity = Gravity.TOP
+            params.bottomMargin = if (keyboardView.visibility == View.VISIBLE) {
+                navBottom + keyboardView.height
+            } else {
+                0
+            }
+            touchOverlay.layoutParams = params
+        }
+
+        private fun liftContentIfNeeded() {
+            val editText = activeEditText ?: return
+            if (keyboardView.visibility != View.VISIBLE || keyboardView.height == 0) return
+
+            val keyboardRect = Rect()
+            val editRect = Rect()
+            keyboardView.getGlobalVisibleRect(keyboardRect)
+            editText.getGlobalVisibleRect(editRect)
+            val contentTranslation = pageContent?.translationY ?: 0f
+            val editOriginalBottom = editRect.bottom - contentTranslation
+            val overlap = editOriginalBottom + dp(12) - keyboardRect.top
+            val target = if (overlap > 0) -overlap.toFloat() else 0f
+            pageContent?.animate()?.translationY(target)?.setDuration(160L)?.start()
+        }
+
+        private fun View.containsRawPoint(x: Int, y: Int): Boolean {
+            val rect = Rect()
+            getGlobalVisibleRect(rect)
+            return rect.contains(x, y)
+        }
+
+        private fun View.findKeyboardEditTextAt(x: Int, y: Int): CustomKeyboardEditText? {
+            if (!containsRawPoint(x, y)) return null
+            if (this is CustomKeyboardEditText) return this
+            if (this is ViewGroup) {
+                for (index in childCount - 1 downTo 0) {
+                    val found = getChildAt(index).findKeyboardEditTextAt(x, y)
+                    if (found != null) return found
+                }
+            }
+            return null
+        }
+
+        private fun CustomKeyboardEditText.dispatchTouchFromOverlay(event: MotionEvent) {
+            val location = IntArray(2)
+            getLocationOnScreen(location)
+            val forwarded = MotionEvent.obtain(event)
+            forwarded.setLocation(
+                event.rawX - location[0],
+                event.rawY - location[1]
+            )
+            dispatchTouchEvent(forwarded)
+            forwarded.recycle()
+        }
+
+        private fun hideSystemKeyboard(editText: CustomKeyboardEditText) {
+            editText.showSoftInputOnFocus = false
+            val inputMethodManager = editText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            inputMethodManager?.hideSoftInputFromWindow(editText.windowToken, 0)
+            handler.postDelayed({
+                inputMethodManager?.hideSoftInputFromWindow(editText.windowToken, 0)
+            }, 80L)
+        }
+
+        private fun dp(value: Int): Int {
+            val density = keyboardView.resources.displayMetrics.density
+            return (value * density + 0.5f).toInt()
+        }
+    }
+}
