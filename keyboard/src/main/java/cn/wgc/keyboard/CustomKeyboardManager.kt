@@ -21,6 +21,8 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.FrameLayout
+import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.util.WeakHashMap
@@ -78,6 +80,7 @@ object CustomKeyboardManager {
         private var navBottom = 0
         private var forwardingEditText: CustomKeyboardEditText? = null
         private var forwardingSystemEditText: EditText? = null
+        private var backPressedCallback: OnBackPressedCallback? = null
 
         private val gestureNavFillView = View(activity).apply {
             visibility = View.GONE
@@ -177,6 +180,7 @@ object CustomKeyboardManager {
                 insets
             }
             ViewCompat.requestApplyInsets(contentRoot)
+            installBackPressedCallback(activity)
         }
 
         fun show(editText: CustomKeyboardEditText) {
@@ -201,6 +205,7 @@ object CustomKeyboardManager {
                 updateOverlayBounds()
                 updateGestureNavFill()
                 touchOverlay.visibility = View.VISIBLE
+                backPressedCallback?.isEnabled = true
                 liftContentIfNeeded()
             }
         }
@@ -210,6 +215,7 @@ object CustomKeyboardManager {
             keyboardView.visibility = View.GONE
             touchOverlay.visibility = View.GONE
             gestureNavFillView.visibility = View.GONE
+            backPressedCallback?.isEnabled = false
             activeEditText = null
             pageContent?.animate()?.translationY(0f)?.setDuration(120L)?.start()
         }
@@ -270,6 +276,16 @@ object CustomKeyboardManager {
             params.gravity = Gravity.BOTTOM
             params.bottomMargin = navBottom
             keyboardView.layoutParams = params
+        }
+
+        private fun installBackPressedCallback(activity: Activity) {
+            val componentActivity = activity as? ComponentActivity ?: return
+            backPressedCallback = object : OnBackPressedCallback(false) {
+                override fun handleOnBackPressed() {
+                    hide()
+                }
+            }
+            componentActivity.onBackPressedDispatcher.addCallback(componentActivity, backPressedCallback!!)
         }
 
         private fun updateGestureNavFill() {
