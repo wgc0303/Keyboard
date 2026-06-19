@@ -58,12 +58,19 @@ class CustomKeyboardEditText @JvmOverloads constructor(
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    var keyboardStyle: CustomKeyboardStyle = CustomKeyboardStyle.default(context)
+        set(value) {
+            field = value
+            if (hasFocus()) CustomKeyboardManager.showFor(this)
+        }
+
     var passwordVisible: Boolean = false
         internal set
 
     init {
         keyboardInputFilter = KeyboardInputFilter()
         val array = context.obtainStyledAttributes(attrs, R.styleable.CustomKeyboardEditText, defStyleAttr, 0)
+        val defaultStyle = CustomKeyboardStyle.default(context)
         keyboardType = CustomKeyboardType.fromAttr(array.getInt(R.styleable.CustomKeyboardEditText_ck_keyboardType, 0))
         keyGap = array.getDimensionPixelSize(R.styleable.CustomKeyboardEditText_ck_keyGap, 0)
         disableSpace = array.getBoolean(R.styleable.CustomKeyboardEditText_ck_disableSpace, false)
@@ -72,6 +79,76 @@ class CustomKeyboardEditText @JvmOverloads constructor(
             array.getInt(R.styleable.CustomKeyboardEditText_ck_alphaInitialMode, 0)
         )
         randomNumberKeys = array.getBoolean(R.styleable.CustomKeyboardEditText_ck_randomNumberKeys, false)
+        keyboardStyle = CustomKeyboardStyle(
+            keyboardBackgroundColor = array.getColor(
+                R.styleable.CustomKeyboardEditText_ck_keyboardBackgroundColor,
+                defaultStyle.keyboardBackgroundColor
+            ),
+            spacedKeyboardBackgroundColor = array.getColor(
+                R.styleable.CustomKeyboardEditText_ck_spacedKeyboardBackgroundColor,
+                defaultStyle.spacedKeyboardBackgroundColor
+            ),
+            letterRowBackgroundColor = array.getColor(
+                R.styleable.CustomKeyboardEditText_ck_letterRowBackgroundColor,
+                defaultStyle.letterRowBackgroundColor
+            ),
+            keyTextColor = array.getColor(
+                R.styleable.CustomKeyboardEditText_ck_keyTextColor,
+                defaultStyle.keyTextColor
+            ),
+            dividerColor = array.getColor(
+                R.styleable.CustomKeyboardEditText_ck_dividerColor,
+                defaultStyle.dividerColor
+            ),
+            keyHeight = array.getDimensionPixelSize(
+                R.styleable.CustomKeyboardEditText_ck_keyHeight,
+                defaultStyle.keyHeight
+            ),
+            panelPaddingWhenSpaced = array.getDimensionPixelSize(
+                R.styleable.CustomKeyboardEditText_ck_panelPaddingWhenSpaced,
+                defaultStyle.panelPaddingWhenSpaced
+            ),
+            keyBackgroundRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_keyBackground,
+                defaultStyle.keyBackgroundRes
+            ),
+            functionKeyBackgroundRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_functionKeyBackground,
+                defaultStyle.functionKeyBackgroundRes
+            ),
+            flatKeyBackgroundRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_flatKeyBackground,
+                defaultStyle.flatKeyBackgroundRes
+            ),
+            flatEdgeKeyBackgroundRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_flatEdgeKeyBackground,
+                defaultStyle.flatEdgeKeyBackgroundRes
+            ),
+            deleteIconRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_deleteIcon,
+                defaultStyle.deleteIconRes
+            ),
+            visibleIconRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_visibleIcon,
+                defaultStyle.visibleIconRes
+            ),
+            invisibleIconRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_invisibleIcon,
+                defaultStyle.invisibleIconRes
+            ),
+            shiftIconRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_shiftIcon,
+                defaultStyle.shiftIconRes
+            ),
+            shiftActiveIconRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_shiftActiveIcon,
+                defaultStyle.shiftActiveIconRes
+            ),
+            hideKeyboardIconRes = array.getResourceId(
+                R.styleable.CustomKeyboardEditText_ck_hideKeyboardIcon,
+                defaultStyle.hideKeyboardIconRes
+            )
+        )
         array.recycle()
 
         showSoftInputOnFocus = false

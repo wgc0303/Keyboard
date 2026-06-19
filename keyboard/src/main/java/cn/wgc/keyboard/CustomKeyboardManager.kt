@@ -146,7 +146,8 @@ object CustomKeyboardManager {
                 disableDot = editText.disableDot,
                 alphaInitialMode = editText.alphaInitialMode,
                 resetAlphaMode = targetChanged,
-                randomNumberKeys = editText.randomNumberKeys
+                randomNumberKeys = editText.randomNumberKeys,
+                style = editText.keyboardStyle
             )
             hideSystemKeyboard(editText)
             keyboardView.post {

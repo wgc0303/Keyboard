@@ -15,5 +15,22 @@
             <enum name="letter" value="1" />
         </attr>
         <attr name="ck_randomNumberKeys" format="boolean" />
+        <attr name="ck_keyboardBackgroundColor" format="color|reference" />
+        <attr name="ck_spacedKeyboardBackgroundColor" format="color|reference" />
+        <attr name="ck_letterRowBackgroundColor" format="color|reference" />
+        <attr name="ck_keyTextColor" format="color|reference" />
+        <attr name="ck_dividerColor" format="color|reference" />
+        <attr name="ck_keyHeight" format="dimension" />
+        <attr name="ck_panelPaddingWhenSpaced" format="dimension" />
+        <attr name="ck_keyBackground" format="reference" />
+        <attr name="ck_functionKeyBackground" format="reference" />
+        <attr name="ck_flatKeyBackground" format="reference" />
+        <attr name="ck_flatEdgeKeyBackground" format="reference" />
+        <attr name="ck_deleteIcon" format="reference" />
+        <attr name="ck_visibleIcon" format="reference" />
+        <attr name="ck_invisibleIcon" format="reference" />
+        <attr name="ck_shiftIcon" format="reference" />
+        <attr name="ck_shiftActiveIcon" format="reference" />
+        <attr name="ck_hideKeyboardIcon" format="reference" />
     </declare-styleable>
 </resources>

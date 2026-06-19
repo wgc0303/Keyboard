@@ -1,8 +1,8 @@
 package cn.wgc.keyboard
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -11,9 +11,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
-import cn.wgc.keyboard.library.R
 
 internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
 
@@ -38,15 +36,16 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
     private var rebuildLettersWhenLaidOut = false
     private var randomNumberKeys = false
     private var numberKeys = ('0'..'9').toList()
+    private var style = CustomKeyboardStyle.default(context)
     val keyboardBackgroundColor: Int
-        get() = if (keyGap == 0) Color.WHITE else Color.parseColor("#F2F3F5")
+        get() = if (keyGap == 0) style.keyboardBackgroundColor else style.spacedKeyboardBackgroundColor
 
     init {
         orientation = VERTICAL
         isClickable = true
         isFocusable = false
-        setBackgroundColor(Color.WHITE)
-        dividerDrawable = ContextCompat.getDrawable(context, R.drawable.ck_keyboard_divider)
+        setBackgroundColor(style.keyboardBackgroundColor)
+        dividerDrawable = dividerDrawable()
         showDividers = SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE or SHOW_DIVIDER_END
         setPadding(0)
     }
@@ -59,22 +58,26 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
         disableDot: Boolean,
         alphaInitialMode: AlphaKeyboardInitialMode,
         resetAlphaMode: Boolean,
-        randomNumberKeys: Boolean
+        randomNumberKeys: Boolean,
+        style: CustomKeyboardStyle
     ) {
         val typeChanged = keyboardType != type
         val randomChanged = this.randomNumberKeys != randomNumberKeys
+        val styleChanged = this.style != style
         keyboardType = type
         this.keyGap = keyGap
         this.passwordVisible = passwordVisible
         this.disableSpace = disableSpace
         this.disableDot = disableDot
         this.randomNumberKeys = randomNumberKeys
+        this.style = style
         if (shouldResetNumberKeys(typeChanged, resetAlphaMode, randomChanged)) {
             numberKeys = if (randomNumberKeys) ('0'..'9').toList().shuffled() else ('0'..'9').toList()
         }
         setBackgroundColor(keyboardBackgroundColor)
+        dividerDrawable = dividerDrawable()
         showDividers = if (keyGap == 0) SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE or SHOW_DIVIDER_END else SHOW_DIVIDER_NONE
-        setPadding(if (keyGap == 0) 0 else dp(6))
+        setPadding(if (keyGap == 0) 0 else style.panelPaddingWhenSpaced)
         alphaNumberShowingLetters = if (type == CustomKeyboardType.ALPHA_NUMBER) {
             if (typeChanged || resetAlphaMode) alphaInitialMode == AlphaKeyboardInitialMode.LETTER else alphaNumberShowingLetters
         } else {
@@ -82,7 +85,7 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
         }
         rebuildLettersWhenLaidOut = type == CustomKeyboardType.ALPHA_NUMBER && alphaNumberShowingLetters && width == 0
         rebuild()
-        if (type == CustomKeyboardType.ALPHA_NUMBER && alphaNumberShowingLetters) {
+        if ((type == CustomKeyboardType.ALPHA_NUMBER && alphaNumberShowingLetters) || styleChanged) {
             post { rebuild() }
         }
     }
@@ -127,10 +130,10 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
         addWeightedRow(listOf(textKey(numberKeys[7].toString()), textKey(numberKeys[8].toString()), textKey(numberKeys[9].toString())))
 
         val left = when (keyboardType) {
-            CustomKeyboardType.NUMBER -> iconKey(R.drawable.ic_ck_keyboard_hide) { listener?.onHide() }
+            CustomKeyboardType.NUMBER -> iconKey(style.hideKeyboardIconRes) { listener?.onHide() }
             CustomKeyboardType.ID_CARD -> textKey("X")
             CustomKeyboardType.NUMBER_PASSWORD -> iconKey(
-                if (passwordVisible) R.drawable.ic_invisible else R.drawable.ic_visible
+                if (passwordVisible) style.invisibleIconRes else style.visibleIconRes
             ) { listener?.onTogglePassword() }
             CustomKeyboardType.ALPHA_NUMBER -> functionTextKey("ABC") {
                 alphaNumberShowingLetters = true
@@ -153,13 +156,13 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
             ) - paddingLeft - paddingRight
         val dividerWidth = if (keyGap == 0) dp(1) else 0
         val keyWidth = (((available - dividerWidth * 9) / 10f) - keyGap).toInt().coerceAtLeast(dp(22))
-        val rowHeight = dp(54)
+        val rowHeight = style.keyHeight
 
         addFixedRow("QWERTYUIOP".map { letterKey(it.toString(), keyWidth) }, rowHeight)
         addFixedRow("ASDFGHJKL".map { letterKey(it.toString(), keyWidth) }, rowHeight)
 
         val third = mutableListOf<View>()
-        val shiftIcon = if (uppercase) R.drawable.ic_ck_shift_active else R.drawable.ic_ck_shift
+        val shiftIcon = if (uppercase) style.shiftActiveIconRes else style.shiftIconRes
         third += iconKey(shiftIcon, function = true, flatEdge = true) {
             uppercase = !uppercase
             rebuild()
@@ -188,17 +191,17 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER
             isClickable = true
-            setBackgroundColor(Color.WHITE)
-            dividerDrawable = ContextCompat.getDrawable(context, R.drawable.ck_keyboard_divider)
+            setBackgroundColor(style.keyboardBackgroundColor)
+            dividerDrawable = dividerDrawable()
             showDividers = if (keyGap == 0) SHOW_DIVIDER_MIDDLE else SHOW_DIVIDER_NONE
         }
         keys.forEach { key ->
             row.addView(
                 key,
-                LinearLayout.LayoutParams(0, dp(54), 1f).withMargins()
+                LinearLayout.LayoutParams(0, style.keyHeight, 1f).withMargins()
             )
         }
-        addView(row, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54)).withRowMargins())
+        addView(row, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, style.keyHeight).withRowMargins())
     }
 
     private fun addFixedRow(keys: List<View>, rowHeight: Int) {
@@ -206,8 +209,8 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER
             isClickable = true
-            setBackgroundColor(if (keyGap == 0) Color.parseColor("#F2F3F5") else Color.TRANSPARENT)
-            dividerDrawable = ContextCompat.getDrawable(context, R.drawable.ck_keyboard_divider)
+            setBackgroundColor(if (keyGap == 0) style.letterRowBackgroundColor else Color.TRANSPARENT)
+            dividerDrawable = dividerDrawable()
             showDividers = if (keyGap == 0) SHOW_DIVIDER_MIDDLE else SHOW_DIVIDER_NONE
         }
         keys.forEach { key ->
@@ -222,8 +225,8 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER
             isClickable = true
-            setBackgroundColor(if (keyGap == 0) Color.parseColor("#F2F3F5") else Color.TRANSPARENT)
-            dividerDrawable = ContextCompat.getDrawable(context, R.drawable.ck_keyboard_divider)
+            setBackgroundColor(if (keyGap == 0) style.letterRowBackgroundColor else Color.TRANSPARENT)
+            dividerDrawable = dividerDrawable()
             showDividers = if (keyGap == 0) SHOW_DIVIDER_MIDDLE else SHOW_DIVIDER_NONE
         }
         keys.forEach { key ->
@@ -261,14 +264,14 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
     ): AppCompatTextView {
         return AppCompatTextView(context).apply {
             this.text = text
-            textSize = if (text.length > 1) 15f else 20f
+            textSize = 20f
             gravity = Gravity.CENTER
-            setTextColor(Color.parseColor("#111827"))
+            setTextColor(style.keyTextColor)
             setBackgroundResource(
-                if (keyGap == 0 && flatEdge) R.drawable.ck_flat_edge_key_background
-                else if (keyGap == 0) R.drawable.ck_flat_key_background
-                else if (function) R.drawable.ck_function_key_background
-                else R.drawable.ck_key_background
+                if (keyGap == 0 && flatEdge) style.flatEdgeKeyBackgroundRes
+                else if (keyGap == 0) style.flatKeyBackgroundRes
+                else if (function) style.functionKeyBackgroundRes
+                else style.keyBackgroundRes
             )
             isEnabled = true
             includeFontPadding = false
@@ -286,10 +289,10 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
         return ImageButton(context).apply {
             setImageResource(iconRes)
             setBackgroundResource(
-                if (keyGap == 0 && flatEdge) R.drawable.ck_flat_edge_key_background
-                else if (keyGap == 0) R.drawable.ck_flat_key_background
-                else if (function) R.drawable.ck_function_key_background
-                else R.drawable.ck_key_background
+                if (keyGap == 0 && flatEdge) style.flatEdgeKeyBackgroundRes
+                else if (keyGap == 0) style.flatKeyBackgroundRes
+                else if (function) style.functionKeyBackgroundRes
+                else style.keyBackgroundRes
             )
             scaleType = ImageView.ScaleType.CENTER
             contentDescription = null
@@ -298,7 +301,7 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
     }
 
     private fun deleteKey(flatEdge: Boolean = false): View {
-        return iconKey(R.drawable.ic_delete, flatEdge = flatEdge) {}.apply {
+        return iconKey(style.deleteIconRes, flatEdge = flatEdge) {}.apply {
             setOnTouchListener { _, event ->
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
@@ -335,4 +338,11 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
+
+    private fun dividerDrawable(): GradientDrawable {
+        return GradientDrawable().apply {
+            setColor(style.dividerColor)
+            setSize(dp(1), dp(1))
+        }
+    }
 }
