@@ -38,6 +38,8 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
     private var rebuildLettersWhenLaidOut = false
     private var randomNumberKeys = false
     private var numberKeys = ('0'..'9').toList()
+    val keyboardBackgroundColor: Int
+        get() = if (keyGap == 0) Color.WHITE else Color.parseColor("#F2F3F5")
 
     init {
         orientation = VERTICAL
@@ -70,7 +72,7 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
         if (shouldResetNumberKeys(typeChanged, resetAlphaMode, randomChanged)) {
             numberKeys = if (randomNumberKeys) ('0'..'9').toList().shuffled() else ('0'..'9').toList()
         }
-        setBackgroundColor(if (keyGap == 0) Color.WHITE else Color.parseColor("#F2F3F5"))
+        setBackgroundColor(keyboardBackgroundColor)
         showDividers = if (keyGap == 0) SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE or SHOW_DIVIDER_END else SHOW_DIVIDER_NONE
         setPadding(if (keyGap == 0) 0 else dp(6))
         alphaNumberShowingLetters = if (type == CustomKeyboardType.ALPHA_NUMBER) {
@@ -261,7 +263,7 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
             this.text = text
             textSize = if (text.length > 1) 15f else 20f
             gravity = Gravity.CENTER
-            setTextColor(if (enabled) Color.parseColor("#111827") else Color.parseColor("#9097A3"))
+            setTextColor(Color.parseColor("#111827"))
             setBackgroundResource(
                 if (keyGap == 0 && flatEdge) R.drawable.ck_flat_edge_key_background
                 else if (keyGap == 0) R.drawable.ck_flat_key_background
