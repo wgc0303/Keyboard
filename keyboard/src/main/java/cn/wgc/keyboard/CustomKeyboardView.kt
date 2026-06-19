@@ -45,7 +45,7 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
         isFocusable = false
         setBackgroundColor(Color.WHITE)
         dividerDrawable = ContextCompat.getDrawable(context, R.drawable.ck_keyboard_divider)
-        showDividers = SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE
+        showDividers = SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE or SHOW_DIVIDER_END
         setPadding(0)
     }
 
@@ -71,7 +71,7 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
             numberKeys = if (randomNumberKeys) ('0'..'9').toList().shuffled() else ('0'..'9').toList()
         }
         setBackgroundColor(if (keyGap == 0) Color.WHITE else Color.parseColor("#F2F3F5"))
-        showDividers = if (keyGap == 0) SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE else SHOW_DIVIDER_NONE
+        showDividers = if (keyGap == 0) SHOW_DIVIDER_BEGINNING or SHOW_DIVIDER_MIDDLE or SHOW_DIVIDER_END else SHOW_DIVIDER_NONE
         setPadding(if (keyGap == 0) 0 else dp(6))
         alphaNumberShowingLetters = if (type == CustomKeyboardType.ALPHA_NUMBER) {
             if (typeChanged || resetAlphaMode) alphaInitialMode == AlphaKeyboardInitialMode.LETTER else alphaNumberShowingLetters
