@@ -18,6 +18,7 @@ open class CustomKeyboardEditText @JvmOverloads constructor(
 
     private var keyboardInputFilter: InputFilter? = null
 
+    /** 键盘类型，对应 XML 属性 ck_keyboardType。 */
     var keyboardType: CustomKeyboardType = CustomKeyboardType.NUMBER
         set(value) {
             field = value
@@ -26,12 +27,14 @@ open class CustomKeyboardEditText @JvmOverloads constructor(
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    /** 键盘按键间距，对应 XML 属性 ck_keyGap。 */
     var keyGap: Int = 0
         set(value) {
             field = value
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    /** 字母数字键盘是否禁用空格输入，对应 XML 属性 ck_disableSpace。 */
     var disableSpace: Boolean = false
         set(value) {
             field = value
@@ -39,6 +42,7 @@ open class CustomKeyboardEditText @JvmOverloads constructor(
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    /** 字母数字键盘是否禁用点号输入，对应 XML 属性 ck_disableDot。 */
     var disableDot: Boolean = false
         set(value) {
             field = value
@@ -46,18 +50,28 @@ open class CustomKeyboardEditText @JvmOverloads constructor(
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    /** 字母数字键盘首次弹出时显示数字还是字母面板，对应 XML 属性 ck_alphaInitialMode。 */
     var alphaInitialMode: AlphaKeyboardInitialMode = AlphaKeyboardInitialMode.NUMBER
         set(value) {
             field = value
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    /** 数字密码键盘是否随机打乱 0-9 数字键，对应 XML 属性 ck_randomNumberKeys。 */
     var randomNumberKeys: Boolean = false
         set(value) {
             field = value
             if (hasFocus()) CustomKeyboardManager.showFor(this)
         }
 
+    /**
+     * 键盘外观配置，对应 XML 中的颜色、尺寸、背景和图标类 ck_* 属性。
+     *
+     * 包含 ck_keyboardBackgroundColor、ck_spacedKeyboardBackgroundColor、ck_letterRowBackgroundColor、
+     * ck_keyTextColor、ck_dividerColor、ck_keyHeight、ck_panelPaddingWhenSpaced、
+     * ck_keyBackground、ck_functionKeyBackground、ck_flatKeyBackground、ck_flatEdgeKeyBackground、
+     * ck_deleteIcon、ck_visibleIcon、ck_invisibleIcon、ck_shiftIcon、ck_shiftActiveIcon、ck_hideKeyboardIcon。
+     */
     var keyboardStyle: CustomKeyboardStyle = CustomKeyboardStyle.default(context)
         set(value) {
             field = value
