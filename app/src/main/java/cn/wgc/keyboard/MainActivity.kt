@@ -3,7 +3,6 @@ package cn.wgc.keyboard
 import android.graphics.Color
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import cn.wgc.keyboard.CustomKeyboardManager
 
 class MainActivity : AppCompatActivity() {
     private fun edgeToEdgeConfig(): EdgeToEdgeHelper.Config {

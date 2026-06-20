@@ -1,7 +1,9 @@
 package cn.wgc.keyboard
 
 import android.graphics.Color
+import android.graphics.Rect
 import android.view.View
+import android.widget.ScrollView
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -32,16 +34,20 @@ object EdgeToEdgeHelper {
         val initialTop = root.paddingTop
         val initialRight = root.paddingRight
         val initialBottom = root.paddingBottom
+        var wasImeVisible = false
+        var scrollYBeforeIme = 0
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val statusInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             val navigationInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             val tappableInsets = insets.getInsets(WindowInsetsCompat.Type.tappableElement())
+            val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val isImeVisible = config.applyImeInset && insets.isVisible(WindowInsetsCompat.Type.ime())
 
             val leftInset = if (config.applyHorizontalInsets) maxOf(statusInsets.left, navigationInsets.left) else 0
             val rightInset = if (config.applyHorizontalInsets) maxOf(statusInsets.right, navigationInsets.right) else 0
             val topInset = if (config.applyTopInset) statusInsets.top else 0
-            val bottomInset = when (config.bottomInsetMode) {
+            val navigationBottomInset = when (config.bottomInsetMode) {
                 BottomInsetMode.ALWAYS -> navigationInsets.bottom
                 BottomInsetMode.NEVER -> 0
                 BottomInsetMode.ONLY_TRADITIONAL_NAVIGATION -> {
@@ -52,6 +58,15 @@ object EdgeToEdgeHelper {
                     }
                 }
             }
+            val imeBottomInset = if (isImeVisible) {
+                imeInsets.bottom
+            } else {
+                0
+            }
+            val bottomInset = maxOf(navigationBottomInset, imeBottomInset)
+            if (isImeVisible && !wasImeVisible) {
+                scrollYBeforeIme = view.scrollY
+            }
 
             view.setPadding(
                 initialLeft + leftInset,
@@ -59,6 +74,14 @@ object EdgeToEdgeHelper {
                 initialRight + rightInset,
                 initialBottom + bottomInset,
             )
+            if (imeBottomInset > 0) {
+                scrollFocusedChildIntoImeSafeArea(view, imeBottomInset)
+            } else if (wasImeVisible && !isImeVisible && view is ScrollView) {
+                view.post {
+                    view.smoothScrollTo(0, scrollYBeforeIme)
+                }
+            }
+            wasImeVisible = isImeVisible
             insets
         }
         ViewCompat.requestApplyInsets(root)
@@ -66,6 +89,41 @@ object EdgeToEdgeHelper {
 
     private fun isTraditionalNavigation(navigationBottom: Int, tappableBottom: Int): Boolean {
         return navigationBottom > 0 && tappableBottom > 0
+    }
+
+    private fun scrollFocusedChildIntoImeSafeArea(root: View, imeBottomInset: Int) {
+        val focused = root.findFocus() ?: return
+        if (focused == root || !isDescendantOf(root, focused)) return
+        root.post {
+            val rootRect = Rect()
+            val focusedRect = Rect()
+            root.getGlobalVisibleRect(rootRect)
+            focused.getGlobalVisibleRect(focusedRect)
+
+            val visibleBottom = rootRect.bottom - imeBottomInset
+            val overlap = focusedRect.bottom + root.dp(12) - visibleBottom
+            if (overlap > 0 && root is ScrollView) {
+                root.smoothScrollBy(0, overlap)
+            } else {
+                focused.requestRectangleOnScreen(
+                    Rect(0, 0, focused.width, focused.height),
+                    true,
+                )
+            }
+        }
+    }
+
+    private fun isDescendantOf(parent: View, child: View): Boolean {
+        var current = child.parent
+        while (current is View) {
+            if (current == parent) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    private fun View.dp(value: Int): Int {
+        return (value * resources.displayMetrics.density + 0.5f).toInt()
     }
 
     data class Config(
@@ -76,6 +134,7 @@ object EdgeToEdgeHelper {
         val applyTopInset: Boolean = true,
         val applyHorizontalInsets: Boolean = true,
         val bottomInsetMode: BottomInsetMode = BottomInsetMode.ALWAYS,
+        val applyImeInset: Boolean = true,
     ) {
         fun statusBarStyle(): SystemBarStyle {
             return if (darkStatusBarIcons) {
