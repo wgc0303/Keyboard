@@ -117,6 +117,34 @@
             app:pwd_plainTextSize="16sp"
             app:pwd_sideGap="0dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="PIN样式密码输入框（点击定位替换）"
+            android:textColor="#111827"
+            android:textSize="14sp" />
+
+        <cn.wgc.keyboard.PwdEditText
+            android:id="@+id/pwdTouchReplaceInput"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="numberPassword"
+            app:pwd_boxColor="#F5F5F5"
+            app:pwd_boxCornerRadius="6dp"
+            app:pwd_boxGap="4dp"
+            app:pwd_cipherTextColor="#111827"
+            app:pwd_cursorStrokeColor="#9E9E9E"
+            app:pwd_cursorStrokeWidth="1dp"
+            app:pwd_dotRadius="4dp"
+            app:pwd_enableCursorPositionByTouch="true"
+            app:pwd_length="5"
+            app:pwd_plainTextColor="#111827"
+            app:pwd_plainTextSize="16sp"
+            app:pwd_sideGap="0dp" />
+
         <cn.wgc.keyboard.CustomKeyboardEditText
             android:id="@+id/alphaNumberInput"
             android:layout_width="match_parent"

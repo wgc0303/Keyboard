@@ -10,6 +10,7 @@ import android.text.InputFilter
 import android.text.method.PasswordTransformationMethod
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.MotionEvent
 import cn.wgc.keyboard.CustomKeyboardType.NUMBER_PASSWORD
 
 class PwdEditText @JvmOverloads constructor(
@@ -18,6 +19,7 @@ class PwdEditText @JvmOverloads constructor(
     defStyleAttr: Int = android.R.attr.editTextStyle,
 ) : CustomKeyboardEditText(context, attrs, defStyleAttr) {
 
+    /** 密码长度，对应 XML 属性 pwd_length。 */
     var passwordLength: Int = DEFAULT_PASSWORD_LENGTH
         set(value) {
             field = value.coerceAtLeast(1)
@@ -26,6 +28,7 @@ class PwdEditText @JvmOverloads constructor(
             invalidate()
         }
 
+    /** 相邻两个密码框之间的间距，对应 XML 属性 pwd_boxGap。 */
     var boxGap: Int = dp(8)
         set(value) {
             field = value.coerceAtLeast(0)
@@ -33,6 +36,7 @@ class PwdEditText @JvmOverloads constructor(
             invalidate()
         }
 
+    /** 第一个/最后一个密码框到控件左右边缘的预留间距，对应 XML 属性 pwd_sideGap。 */
     var sideGap: Int = 0
         set(value) {
             field = value.coerceAtLeast(0)
@@ -40,53 +44,64 @@ class PwdEditText @JvmOverloads constructor(
             invalidate()
         }
 
+    /** 密码框填充颜色，对应 XML 属性 pwd_boxColor。 */
     var boxColor: Int = Color.parseColor("#F5F5F5")
         set(value) {
             field = value
             invalidate()
         }
 
+    /** 密码框圆角半径，对应 XML 属性 pwd_boxCornerRadius。 */
     var boxCornerRadius: Float = dp(8).toFloat()
         set(value) {
             field = value.coerceAtLeast(0f)
             invalidate()
         }
 
+    /** 密文圆点半径，对应 XML 属性 pwd_dotRadius。 */
     var dotRadius: Float = dp(5).toFloat()
         set(value) {
             field = value.coerceAtLeast(0f)
             invalidate()
         }
 
+    /** 明文显示时的字体大小，对应 XML 属性 pwd_plainTextSize。 */
     var plainTextSize: Float = sp(18)
         set(value) {
             field = value.coerceAtLeast(1f)
             invalidate()
         }
 
+    /** 密文圆点颜色，对应 XML 属性 pwd_cipherTextColor。 */
     var cipherTextColor: Int = Color.parseColor("#222222")
         set(value) {
             field = value
             invalidate()
         }
 
+    /** 明文显示时的字符颜色，对应 XML 属性 pwd_plainTextColor。 */
     var plainTextColor: Int = Color.parseColor("#222222")
         set(value) {
             field = value
             invalidate()
         }
 
+    /** 光标框描边颜色，对应 XML 属性 pwd_cursorStrokeColor。 */
     var cursorStrokeColor: Int = Color.parseColor("#9E9E9E")
         set(value) {
             field = value
             invalidate()
         }
 
+    /** 光标框描边宽度，对应 XML 属性 pwd_cursorStrokeWidth。 */
     var cursorStrokeWidth: Float = dp(1).toFloat()
         set(value) {
             field = value.coerceAtLeast(0f)
             invalidate()
         }
+
+    /** 是否允许点击密码框定位并替换单个字符，对应 XML 属性 pwd_enableCursorPositionByTouch。 */
+    var enableCursorPositionByTouch: Boolean = false
 
     private val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -104,6 +119,7 @@ class PwdEditText @JvmOverloads constructor(
     private val cursorRect = RectF()
     private val textBounds = Rect()
     private var measuredBoxSize = dp(52).toFloat()
+    private var pendingTouchCursorIndex: Int? = null
 
     init {
         keyboardType = NUMBER_PASSWORD
@@ -129,6 +145,10 @@ class PwdEditText @JvmOverloads constructor(
         plainTextColor = array.getColor(R.styleable.PwdEditText_pwd_plainTextColor, plainTextColor)
         cursorStrokeColor = array.getColor(R.styleable.PwdEditText_pwd_cursorStrokeColor, cursorStrokeColor)
         cursorStrokeWidth = array.getDimension(R.styleable.PwdEditText_pwd_cursorStrokeWidth, cursorStrokeWidth)
+        enableCursorPositionByTouch = array.getBoolean(
+            R.styleable.PwdEditText_pwd_enableCursorPositionByTouch,
+            false,
+        )
         array.recycle()
 
         updateLengthFilter()
@@ -181,17 +201,7 @@ class PwdEditText @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         val value = text?.toString().orEmpty()
         val isPlainText = passwordVisible
-        val contentWidth = width - paddingLeft - paddingRight
-        val contentHeight = height - paddingTop - paddingBottom
-        val availableBoxAreaWidth = (contentWidth - sideGap * 2).coerceAtLeast(0)
-        val boxSize = minOf(
-            measuredBoxSize,
-            ((availableBoxAreaWidth - totalGap()).toFloat() / passwordLength).coerceAtLeast(0f),
-            contentHeight.toFloat().coerceAtLeast(0f),
-        )
-        val boxesWidth = boxSize * passwordLength + totalGap()
-        val startX = paddingLeft + sideGap + (availableBoxAreaWidth - boxesWidth) / 2f
-        val startY = paddingTop + (contentHeight - boxSize) / 2f
+        val layout = calculateBoxLayout()
 
         boxPaint.color = boxColor
         dotPaint.color = cipherTextColor
@@ -201,8 +211,7 @@ class PwdEditText @JvmOverloads constructor(
         focusStrokePaint.strokeWidth = cursorStrokeWidth
 
         for (index in 0 until passwordLength) {
-            val left = startX + index * (boxSize + boxGap)
-            boxRect.set(left, startY, left + boxSize, startY + boxSize)
+            boxRect.set(layout.rectFor(index))
             canvas.drawRoundRect(boxRect, boxCornerRadius, boxCornerRadius, boxPaint)
 
             if (index < value.length) {
@@ -215,11 +224,24 @@ class PwdEditText @JvmOverloads constructor(
         }
 
         if (hasFocus()) {
-            val cursorIndex = value.length.coerceIn(0, passwordLength - 1)
-            val left = startX + cursorIndex * (boxSize + boxGap)
-            boxRect.set(left, startY, left + boxSize, startY + boxSize)
+            val cursorIndex = selectionStart.coerceAtLeast(0).coerceIn(0, passwordLength - 1)
+            boxRect.set(layout.rectFor(cursorIndex))
             drawCursor(canvas, boxRect)
         }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (enableCursorPositionByTouch && event.actionMasked == MotionEvent.ACTION_DOWN) {
+            pendingTouchCursorIndex = findTouchedCursorIndex(event.x, event.y)
+        }
+        val handled = super.onTouchEvent(event)
+        if (enableCursorPositionByTouch && event.actionMasked == MotionEvent.ACTION_UP) {
+            pendingTouchCursorIndex?.let(::applyTouchCursorIndex)
+            pendingTouchCursorIndex = null
+        } else if (event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            pendingTouchCursorIndex = null
+        }
+        return handled
     }
 
     override fun onTextChanged(text: CharSequence?, start: Int, lengthBefore: Int, lengthAfter: Int) {
@@ -250,6 +272,51 @@ class PwdEditText @JvmOverloads constructor(
         cursorRect.inset(inset, inset)
         val radius = (boxCornerRadius - inset).coerceAtLeast(0f)
         canvas.drawRoundRect(cursorRect, radius, radius, focusStrokePaint)
+    }
+
+    private fun findTouchedCursorIndex(x: Float, y: Float): Int {
+        val layout = calculateBoxLayout()
+        if (y < layout.startY || y > layout.startY + layout.boxSize) {
+            return textLength()
+        }
+
+        for (index in 0 until passwordLength) {
+            if (layout.rectFor(index).contains(x, y)) {
+                return index
+            }
+        }
+        return textLength()
+    }
+
+    private fun applyTouchCursorIndex(index: Int) {
+        val length = textLength()
+        val target = index.coerceIn(0, length)
+        if (target < length) {
+            setSelection(target, target + 1)
+        } else {
+            setSelection(length)
+        }
+    }
+
+    private fun textLength(): Int {
+        return text?.length ?: 0
+    }
+
+    private fun calculateBoxLayout(): BoxLayout {
+        val contentWidth = width - paddingLeft - paddingRight
+        val contentHeight = height - paddingTop - paddingBottom
+        val availableBoxAreaWidth = (contentWidth - sideGap * 2).coerceAtLeast(0)
+        val boxSize = minOf(
+            measuredBoxSize,
+            ((availableBoxAreaWidth - totalGap()).toFloat() / passwordLength).coerceAtLeast(0f),
+            contentHeight.toFloat().coerceAtLeast(0f),
+        )
+        val boxesWidth = boxSize * passwordLength + totalGap()
+        return BoxLayout(
+            boxSize = boxSize,
+            startX = paddingLeft + sideGap + (availableBoxAreaWidth - boxesWidth) / 2f,
+            startY = paddingTop + (contentHeight - boxSize) / 2f,
+        )
     }
 
     private fun updateLengthFilter() {
@@ -283,6 +350,17 @@ class PwdEditText @JvmOverloads constructor(
             value.toFloat(),
             resources.displayMetrics,
         )
+    }
+
+    private inner class BoxLayout(
+        val boxSize: Float,
+        val startX: Float,
+        val startY: Float,
+    ) {
+        fun rectFor(index: Int): RectF {
+            val left = startX + index * (boxSize + boxGap)
+            return RectF(left, startY, left + boxSize, startY + boxSize)
+        }
     }
 
     private companion object {

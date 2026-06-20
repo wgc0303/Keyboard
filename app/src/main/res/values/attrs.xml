@@ -12,5 +12,6 @@
         <attr name="pwd_plainTextColor" format="color" />
         <attr name="pwd_cursorStrokeColor" format="color" />
         <attr name="pwd_cursorStrokeWidth" format="dimension" />
+        <attr name="pwd_enableCursorPositionByTouch" format="boolean" />
     </declare-styleable>
 </resources>
