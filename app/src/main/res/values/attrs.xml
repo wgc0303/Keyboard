@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PwdEditText">
+        <attr name="pwd_length" format="integer" />
+        <attr name="pwd_boxGap" format="dimension" />
+        <attr name="pwd_sideGap" format="dimension" />
+        <attr name="pwd_boxColor" format="color" />
+        <attr name="pwd_boxCornerRadius" format="dimension" />
+        <attr name="pwd_dotRadius" format="dimension" />
+        <attr name="pwd_plainTextSize" format="dimension" />
+        <attr name="pwd_cipherTextColor" format="color" />
+        <attr name="pwd_plainTextColor" format="color" />
+        <attr name="pwd_cursorStrokeColor" format="color" />
+        <attr name="pwd_cursorStrokeWidth" format="dimension" />
+    </declare-styleable>
+</resources>

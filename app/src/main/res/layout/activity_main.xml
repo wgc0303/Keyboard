@@ -62,6 +62,61 @@
             app:ck_randomNumberKeys="true"
             app:ck_keyboardType="numberPassword" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="PIN样式密码输入框（宽固定，高自适应）"
+            android:textColor="#111827"
+            android:textSize="14sp" />
+
+        <cn.wgc.keyboard.PwdEditText
+            android:id="@+id/pwdMatchWidthInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:paddingVertical="0dp"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="numberPassword"
+            app:pwd_boxColor="#F5F5F5"
+            app:pwd_boxCornerRadius="6dp"
+            app:pwd_boxGap="2dp"
+            app:pwd_cipherTextColor="#222222"
+            app:pwd_cursorStrokeColor="#9E9E9E"
+            app:pwd_cursorStrokeWidth="1dp"
+            app:pwd_dotRadius="5dp"
+            app:pwd_length="8"
+            app:pwd_plainTextColor="#222222"
+            app:pwd_plainTextSize="18sp"
+            app:pwd_sideGap="0dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="PIN样式密码输入框（高固定，宽自适应）"
+            android:textColor="#111827"
+            android:textSize="14sp" />
+
+        <cn.wgc.keyboard.PwdEditText
+            android:id="@+id/pwdFixedHeightInput"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            app:ck_keyGap="0dp"
+            app:ck_keyboardType="numberPassword"
+            app:pwd_boxColor="#F5F5F5"
+            app:pwd_boxCornerRadius="6dp"
+            app:pwd_boxGap="4dp"
+            app:pwd_cipherTextColor="#111827"
+            app:pwd_cursorStrokeColor="#9E9E9E"
+            app:pwd_cursorStrokeWidth="1dp"
+            app:pwd_dotRadius="4dp"
+            app:pwd_length="6"
+            app:pwd_plainTextColor="#111827"
+            app:pwd_plainTextSize="16sp"
+            app:pwd_sideGap="0dp" />
+
         <cn.wgc.keyboard.CustomKeyboardEditText
             android:id="@+id/alphaNumberInput"
             android:layout_width="match_parent"

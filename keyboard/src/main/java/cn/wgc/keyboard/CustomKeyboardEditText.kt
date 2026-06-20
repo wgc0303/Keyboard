@@ -10,7 +10,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.widget.AppCompatEditText
 import cn.wgc.keyboard.library.R
 
-class CustomKeyboardEditText @JvmOverloads constructor(
+open class CustomKeyboardEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = android.R.attr.editTextStyle
