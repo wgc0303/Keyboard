@@ -1,6 +1,7 @@
 package cn.wgc.keyboard
 
 import android.content.Context
+import android.graphics.Typeface
 import android.text.InputFilter
 import android.text.Spanned
 import android.text.InputType
@@ -210,10 +211,15 @@ open class CustomKeyboardEditText @JvmOverloads constructor(
     }
 
     private fun configureInputType() {
+        val originalTypeface = typeface
+        val originalTypefaceStyle = originalTypeface?.style ?: Typeface.NORMAL
         inputType = when (keyboardType) {
             CustomKeyboardType.NUMBER_PASSWORD -> InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
             CustomKeyboardType.ALPHA_NUMBER -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             else -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+        if (originalTypeface != null) {
+            setTypeface(originalTypeface, originalTypefaceStyle)
         }
         showSoftInputOnFocus = false
     }

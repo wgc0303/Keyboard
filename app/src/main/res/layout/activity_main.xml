@@ -248,6 +248,7 @@
             android:hint="自定义Shift/删除图标字母键盘"
             android:paddingHorizontal="12dp"
             android:textSize="16sp"
+            android:fontFamily="@font/ipid"
             app:ck_alphaInitialMode="letter"
             app:ck_deleteIcon="@drawable/ic_demo_delete"
             app:ck_keyGap="0dp"
@@ -261,6 +262,7 @@
             android:layout_height="48dp"
             android:layout_marginTop="18dp"
             android:backgroundTint="#CBD5E1"
+            android:fontFamily="@font/ipid"
             android:hint="普通EditText，用于验证系统键盘外部收起"
             android:paddingHorizontal="12dp"
             android:textSize="16sp" />
