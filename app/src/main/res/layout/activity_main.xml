@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@color/white"
-    tools:context=".MainActivity">
+    android:background="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,269 +15,60 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Custom Keyboard Demo"
+            android:text="Custom Keyboard 验证入口"
             android:textColor="#111827"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/numberInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="22dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="数字键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="number" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/idCardInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="身份证键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="idCard" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/passwordInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="数字密码键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_keyHeight="54dp"
-            app:ck_keyTextColor="#111827"
-            app:ck_keyGap="0dp"
-            app:ck_randomNumberKeys="true"
-            app:ck_keyboardType="numberPassword" />
-
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="PIN样式密码输入框（宽固定，高自适应）"
-            android:textColor="#111827"
+            android:layout_marginTop="12dp"
+            android:text="每个宿主场景都拆成独立 Activity，便于单独验证窗口层级、外部点击、返回键、底部顶起和生命周期切换。"
+            android:textColor="#4B5563"
             android:textSize="14sp" />
 
-        <cn.wgc.keyboard.PwdEditText
-            android:id="@+id/pwdMatchWidthInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:paddingVertical="0dp"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="numberPassword"
-            app:pwd_boxColor="#F5F5F5"
-            app:pwd_boxCornerRadius="6dp"
-            app:pwd_boxGap="2dp"
-            app:pwd_cipherTextColor="#222222"
-            app:pwd_cursorStrokeColor="#9E9E9E"
-            app:pwd_cursorStrokeWidth="1dp"
-            app:pwd_dotRadius="5dp"
-            app:pwd_length="8"
-            app:pwd_plainTextColor="#222222"
-            app:pwd_plainTextSize="18sp"
-            app:pwd_sideGap="0dp" />
-
-        <TextView
+        <Button
+            android:id="@+id/openActivityScenarioButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="PIN样式密码输入框（高固定，宽自适应）"
-            android:textColor="#111827"
-            android:textSize="14sp" />
+            android:text="Activity 宿主验证" />
 
-        <cn.wgc.keyboard.PwdEditText
-            android:id="@+id/pwdFixedHeightInput"
-            android:layout_width="wrap_content"
-            android:layout_height="42dp"
-            android:layout_marginTop="8dp"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="numberPassword"
-            app:pwd_boxColor="#F5F5F5"
-            app:pwd_boxCornerRadius="6dp"
-            app:pwd_boxGap="4dp"
-            app:pwd_cipherTextColor="#111827"
-            app:pwd_cursorStrokeColor="#9E9E9E"
-            app:pwd_cursorStrokeWidth="1dp"
-            app:pwd_dotRadius="4dp"
-            app:pwd_length="6"
-            app:pwd_plainTextColor="#111827"
-            app:pwd_plainTextSize="16sp"
-            app:pwd_sideGap="0dp" />
-
-        <TextView
+        <Button
+            android:id="@+id/openFragmentScenarioButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="PIN样式密码输入框（点击定位替换）"
-            android:textColor="#111827"
-            android:textSize="14sp" />
+            android:layout_marginTop="10dp"
+            android:text="Fragment 宿主验证" />
 
-        <cn.wgc.keyboard.PwdEditText
-            android:id="@+id/pwdTouchReplaceInput"
-            android:layout_width="wrap_content"
-            android:layout_height="42dp"
-            android:layout_marginTop="8dp"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="numberPassword"
-            app:pwd_boxColor="#F5F5F5"
-            app:pwd_boxCornerRadius="6dp"
-            app:pwd_boxGap="4dp"
-            app:pwd_cipherTextColor="#111827"
-            app:pwd_cursorStrokeColor="#9E9E9E"
-            app:pwd_cursorStrokeWidth="1dp"
-            app:pwd_dotRadius="4dp"
-            app:pwd_enableCursorPositionByTouch="true"
-            app:pwd_length="5"
-            app:pwd_plainTextColor="#111827"
-            app:pwd_plainTextSize="16sp"
-            app:pwd_sideGap="0dp" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/alphaNumberInput"
+        <Button
+            android:id="@+id/openMixedFragmentScenarioButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="字母数字键盘（禁用点号）"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_disableDot="true"
-            app:ck_disableSpace="true"
-            app:ck_alphaInitialMode="letter"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="alphaNumber" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Fragment 混合输入验证" />
 
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/styledNumberInput"
+        <Button
+            android:id="@+id/openDialogScenarioButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="自定义颜色数字键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_dividerColor="#F59E0B"
-            app:ck_keyHeight="48dp"
-            app:ck_keyTextColor="#7C2D12"
-            app:ck_keyboardBackgroundColor="#FFF7ED"
-            app:ck_keyboardType="number"
-            app:ck_keyGap="0dp" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="DialogFragment 宿主验证" />
 
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/styledAlphaInput"
+        <Button
+            android:id="@+id/openCustomDialogScenarioButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="自定义字母键盘样式"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_alphaInitialMode="letter"
-            app:ck_dividerColor="#93C5FD"
-            app:ck_keyHeight="50dp"
-            app:ck_keyTextColor="#1D4ED8"
-            app:ck_keyboardBackgroundColor="#EFF6FF"
-            app:ck_letterRowBackgroundColor="#DBEAFE"
-            app:ck_keyboardType="alphaNumber"
-            app:ck_keyGap="0dp" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="自定义 Dialog 宿主验证" />
 
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/spacedStyleInput"
+        <Button
+            android:id="@+id/openBottomSheetScenarioButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="自定义间距键盘样式"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_keyGap="6dp"
-            app:ck_keyHeight="52dp"
-            app:ck_keyTextColor="#064E3B"
-            app:ck_keyboardType="number"
-            app:ck_panelPaddingWhenSpaced="8dp"
-            app:ck_spacedKeyboardBackgroundColor="#ECFDF5" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/iconNumberInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="自定义收起/删除图标数字键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_deleteIcon="@drawable/ic_demo_delete"
-            app:ck_hideKeyboardIcon="@drawable/ic_demo_hide_keyboard"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="number" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/iconPasswordInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="自定义显隐/删除图标密码键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_deleteIcon="@drawable/ic_demo_delete"
-            app:ck_invisibleIcon="@drawable/ic_demo_invisible"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="numberPassword"
-            app:ck_visibleIcon="@drawable/ic_demo_visible" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/iconAlphaInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="自定义Shift/删除图标字母键盘"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            android:fontFamily="@font/ipid"
-            app:ck_alphaInitialMode="letter"
-            app:ck_deleteIcon="@drawable/ic_demo_delete"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="alphaNumber"
-            app:ck_shiftActiveIcon="@drawable/ic_demo_shift_active"
-            app:ck_shiftIcon="@drawable/ic_demo_shift" />
-
-        <EditText
-            android:id="@+id/systemEditText"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="18dp"
-            android:backgroundTint="#CBD5E1"
-            android:fontFamily="@font/ipid"
-            android:hint="普通EditText，用于验证系统键盘外部收起"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp" />
-
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="420dp" />
-
-        <cn.wgc.keyboard.CustomKeyboardEditText
-            android:id="@+id/bottomInput"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:backgroundTint="#CBD5E1"
-            android:hint="底部输入框，用于验证遮挡顶起"
-            android:paddingHorizontal="12dp"
-            android:textSize="16sp"
-            app:ck_keyGap="0dp"
-            app:ck_keyboardType="alphaNumber" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="BottomSheet 宿主验证" />
 
     </LinearLayout>
 </ScrollView>

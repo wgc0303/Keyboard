@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="验证建议：依次测试点击输入框、切换多个输入框、点击外部区域、按返回键、滚动到底部后再输入。"
+            android:textColor="#4B5563"
+            android:textSize="14sp" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/scenarioNumberInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="数字键盘"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_keyboardType="number" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/scenarioAlphaInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="字母数字键盘（首屏字母）"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_alphaInitialMode="letter"
+            app:ck_disableDot="true"
+            app:ck_keyboardType="alphaNumber" />
+
+        <cn.wgc.keyboard.PwdEditText
+            android:id="@+id/scenarioPwdInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:pwd_boxColor="#F5F5F5"
+            app:pwd_boxCornerRadius="6dp"
+            app:pwd_boxGap="4dp"
+            app:pwd_cursorStrokeColor="#9E9E9E"
+            app:pwd_cursorStrokeWidth="1dp"
+            app:pwd_dotRadius="4dp"
+            app:pwd_length="6"
+            app:pwd_plainTextSize="16sp" />
+
+        <TextView
+            android:id="@+id/scenarioSystemHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="混合输入验证：先聚焦系统 EditText，再切回自定义键盘输入框。"
+            android:textColor="#4B5563"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/scenarioSystemEditText"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="系统 EditText"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <Space
+            android:id="@+id/scenarioSpacer"
+            android:layout_width="match_parent"
+            android:layout_height="260dp" />
+
+        <TextView
+            android:id="@+id/scenarioBottomHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="底部场景：验证页面滚动和输入框顶起。"
+            android:textColor="#4B5563"
+            android:textSize="14sp" />
+
+        <cn.wgc.keyboard.CustomKeyboardEditText
+            android:id="@+id/scenarioBottomInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#CBD5E1"
+            android:hint="底部输入框"
+            android:paddingHorizontal="12dp"
+            android:textSize="16sp"
+            app:ck_keyboardType="alphaNumber" />
+
+    </LinearLayout>
+</ScrollView>

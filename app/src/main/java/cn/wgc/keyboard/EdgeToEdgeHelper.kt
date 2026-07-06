@@ -11,6 +11,7 @@ import androidx.annotation.ColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import android.view.Window
 
 object EdgeToEdgeHelper {
 
@@ -23,13 +24,27 @@ object EdgeToEdgeHelper {
             statusBarStyle = config.statusBarStyle(),
             navigationBarStyle = config.navigationBarStyle(),
         )
-        activity.window.statusBarColor = config.statusBarColor
-        activity.window.navigationBarColor = config.navigationBarColor
-        WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
+        applyWindow(activity.window, root, config)
+    }
+
+    fun applyWindow(
+        window: Window,
+        root: View,
+        config: Config = Config(),
+    ) {
+        window.statusBarColor = config.statusBarColor
+        window.navigationBarColor = config.navigationBarColor
+        WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = config.darkStatusBarIcons
             isAppearanceLightNavigationBars = config.darkNavigationBarIcons
         }
+        applyInsets(root, config)
+    }
 
+    fun applyInsets(
+        root: View,
+        config: Config = Config(),
+    ) {
         val initialLeft = root.paddingLeft
         val initialTop = root.paddingTop
         val initialRight = root.paddingRight

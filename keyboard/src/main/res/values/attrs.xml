@@ -18,6 +18,7 @@
         <attr name="ck_keyboardBackgroundColor" format="color|reference" />
         <attr name="ck_spacedKeyboardBackgroundColor" format="color|reference" />
         <attr name="ck_letterRowBackgroundColor" format="color|reference" />
+        <attr name="ck_systemNavFillColor" format="color|reference" />
         <attr name="ck_keyTextColor" format="color|reference" />
         <attr name="ck_dividerColor" format="color|reference" />
         <attr name="ck_keyHeight" format="dimension" />

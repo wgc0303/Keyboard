@@ -1,5 +1,6 @@
 package cn.wgc.keyboard
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -7,8 +8,8 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
-import android.view.ActionMode
 import android.text.method.PasswordTransformationMethod
+import android.view.ActionMode
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -25,26 +26,36 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import cn.wgc.keyboard.library.R
 import java.util.WeakHashMap
 
 object CustomKeyboardManager {
-    private val controllers = WeakHashMap<Activity, Controller>()
+    private val controllers = WeakHashMap<FrameLayout, Controller>()
     private val dismissInstallers = WeakHashMap<Activity, OutsideDismissWindowCallback>()
 
+    private const val HOST_WINDOW_TAG = R.id.ck_host_window
+
     fun showFor(editText: CustomKeyboardEditText) {
-        val activity = editText.context.findActivity() ?: return
-        val controller = controllers.getOrPut(activity) { Controller(activity) }
+        val contentRoot = editText.findHostContentRoot() ?: return
+        val controller = controllers.getOrPut(contentRoot) {
+            Controller(
+                contentRoot = contentRoot,
+                hostActivity = editText.context.findActivity(),
+                hostWindow = editText.findHostWindow(),
+            )
+        }
         controller.show(editText)
     }
 
     fun hide(editText: CustomKeyboardEditText) {
-        val activity = editText.context.findActivity() ?: return
-        controllers[activity]?.hide()
+        val contentRoot = editText.findHostContentRoot() ?: return
+        controllers[contentRoot]?.hide()
     }
 
     fun installDismissOnOutsideTouch(
         activity: Activity,
-        options: KeyboardDismissOptions = KeyboardDismissOptions()
+        options: KeyboardDismissOptions = KeyboardDismissOptions(),
     ) {
         val existing = dismissInstallers[activity]
         if (existing != null) {
@@ -57,6 +68,10 @@ object CustomKeyboardManager {
         dismissInstallers[activity] = callback
     }
 
+    fun bindHostWindow(root: View, window: Window?) {
+        root.setTag(HOST_WINDOW_TAG, window)
+    }
+
     private fun Context.findActivity(): Activity? {
         var current = this
         while (current is ContextWrapper) {
@@ -66,8 +81,39 @@ object CustomKeyboardManager {
         return null
     }
 
-    private class Controller(activity: Activity) : CustomKeyboardView.Listener {
-        private val contentRoot = activity.findViewById<FrameLayout>(android.R.id.content)
+    private fun CustomKeyboardEditText.findHostContentRoot(): FrameLayout? {
+        val rootContent = rootView.findViewById<View>(android.R.id.content) as? FrameLayout
+        if (rootContent != null) return rootContent
+
+        var current: View? = this
+        var candidate: FrameLayout? = null
+        while (current != null) {
+            if (current is FrameLayout) {
+                candidate = current
+            }
+            current = current.parent as? View
+        }
+        return candidate ?: context.findActivity()?.findViewById(android.R.id.content)
+    }
+
+    private fun CustomKeyboardEditText.findHostWindow(): Window? {
+        var current: View? = this
+        while (current != null) {
+            val taggedWindow = current.getTag(HOST_WINDOW_TAG) as? Window
+            if (taggedWindow != null) return taggedWindow
+            current = current.parent as? View
+        }
+        val rootTaggedWindow = rootView.getTag(HOST_WINDOW_TAG) as? Window
+        if (rootTaggedWindow != null) return rootTaggedWindow
+        return context.findActivity()?.window
+    }
+
+    private class Controller(
+        private val contentRoot: FrameLayout,
+        hostActivity: Activity?,
+        hostWindow: Window?,
+    ) : CustomKeyboardView.Listener {
+        private val hostWindow: Window? = hostWindow ?: hostActivity?.window
         private val pageContent: View? = contentRoot.getChildAt(0)
         private val handler = Handler(Looper.getMainLooper())
         private val deleteRunnable = object : Runnable {
@@ -81,14 +127,17 @@ object CustomKeyboardManager {
         private var forwardingEditText: CustomKeyboardEditText? = null
         private var forwardingSystemEditText: EditText? = null
         private var backPressedCallback: OnBackPressedCallback? = null
+        private var originalNavigationBarColor: Int? = null
+        private var originalLightNavigationBarIcons: Boolean? = null
 
-        private val gestureNavFillView = View(activity).apply {
+        private val gestureNavFillView = View(contentRoot.context).apply {
             visibility = View.GONE
             setBackgroundColor(Color.WHITE)
             isClickable = false
         }
 
-        private val touchOverlay = View(activity).apply {
+        @SuppressLint("ClickableViewAccessibility")
+        private val touchOverlay = View(contentRoot.context).apply {
             visibility = View.GONE
             isClickable = true
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -142,7 +191,7 @@ object CustomKeyboardManager {
             }
         }
 
-        private val keyboardView = CustomKeyboardView(activity).apply {
+        private val keyboardView = CustomKeyboardView(contentRoot.context).apply {
             visibility = View.GONE
             listener = this@Controller
             addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateOverlayBounds() }
@@ -153,24 +202,24 @@ object CustomKeyboardManager {
                 touchOverlay,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
             )
             contentRoot.addView(
                 gestureNavFillView,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     0,
-                    Gravity.BOTTOM
-                )
+                    Gravity.BOTTOM,
+                ),
             )
             contentRoot.addView(
                 keyboardView,
                 FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    Gravity.BOTTOM
-                )
+                    Gravity.BOTTOM,
+                ),
             )
             ViewCompat.setOnApplyWindowInsetsListener(contentRoot) { _, insets ->
                 navBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
@@ -180,7 +229,7 @@ object CustomKeyboardManager {
                 insets
             }
             ViewCompat.requestApplyInsets(contentRoot)
-            installBackPressedCallback(activity)
+            installBackPressedCallback(hostActivity)
         }
 
         fun show(editText: CustomKeyboardEditText) {
@@ -197,13 +246,14 @@ object CustomKeyboardManager {
                 alphaInitialMode = editText.alphaInitialMode,
                 resetAlphaMode = targetChanged,
                 randomNumberKeys = editText.randomNumberKeys,
-                style = editText.keyboardStyle
+                style = editText.keyboardStyle,
             )
             hideSystemKeyboard(editText)
             keyboardView.post {
                 keyboardView.ensureReadyAfterShown()
                 updateOverlayBounds()
                 updateGestureNavFill()
+                updateTraditionalNavigationBarAppearance()
                 touchOverlay.visibility = View.VISIBLE
                 backPressedCallback?.isEnabled = true
                 liftContentIfNeeded()
@@ -215,6 +265,7 @@ object CustomKeyboardManager {
             keyboardView.visibility = View.GONE
             touchOverlay.visibility = View.GONE
             gestureNavFillView.visibility = View.GONE
+            restoreTraditionalNavigationBarAppearance()
             backPressedCallback?.isEnabled = false
             activeEditText = null
             pageContent?.animate()?.translationY(0f)?.setDuration(120L)?.start()
@@ -246,7 +297,8 @@ object CustomKeyboardManager {
         override fun onTogglePassword() {
             val editText = activeEditText ?: return
             editText.passwordVisible = !editText.passwordVisible
-            editText.transformationMethod = if (editText.passwordVisible) null else PasswordTransformationMethod.getInstance()
+            editText.transformationMethod =
+                if (editText.passwordVisible) null else PasswordTransformationMethod.getInstance()
             editText.setSelection(editText.text?.length ?: 0)
             keyboardView.setPasswordVisible(editText.passwordVisible)
         }
@@ -278,8 +330,10 @@ object CustomKeyboardManager {
             keyboardView.layoutParams = params
         }
 
-        private fun installBackPressedCallback(activity: Activity) {
+        private fun installBackPressedCallback(activity: Activity?) {
             val componentActivity = activity as? ComponentActivity ?: return
+            val activityContentRoot = componentActivity.findViewById<FrameLayout>(android.R.id.content)
+            if (activityContentRoot !== contentRoot) return
             backPressedCallback = object : OnBackPressedCallback(false) {
                 override fun handleOnBackPressed() {
                     hide()
@@ -290,12 +344,35 @@ object CustomKeyboardManager {
 
         private fun updateGestureNavFill() {
             val params = gestureNavFillView.layoutParams as? FrameLayout.LayoutParams ?: return
-            val shouldFill = keyboardView.visibility == View.VISIBLE && navBottom > 0 && navBottom <= dp(32)
+            val shouldFill = keyboardView.visibility == View.VISIBLE && navBottom > 0 && !isTraditionalNavigation()
             params.gravity = Gravity.BOTTOM
             params.height = if (shouldFill) navBottom else 0
             gestureNavFillView.layoutParams = params
             gestureNavFillView.visibility = if (shouldFill) View.VISIBLE else View.GONE
-            gestureNavFillView.setBackgroundColor(keyboardView.keyboardBackgroundColor)
+            gestureNavFillView.setBackgroundColor(keyboardView.systemNavFillColor)
+        }
+
+        private fun updateTraditionalNavigationBarAppearance() {
+            if (keyboardView.visibility != View.VISIBLE || navBottom <= 0 || !isTraditionalNavigation()) return
+            val window = hostWindow ?: return
+            if (originalNavigationBarColor == null) {
+                originalNavigationBarColor = window.navigationBarColor
+                originalLightNavigationBarIcons =
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars
+            }
+            window.navigationBarColor = keyboardView.systemNavFillColor
+        }
+
+        private fun restoreTraditionalNavigationBarAppearance() {
+            val window = hostWindow ?: return
+            originalNavigationBarColor?.let { color ->
+                window.navigationBarColor = color
+                originalLightNavigationBarIcons?.let { isLight ->
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = isLight
+                }
+            }
+            originalNavigationBarColor = null
+            originalLightNavigationBarIcons = null
         }
 
         private fun updateOverlayBounds() {
@@ -360,7 +437,7 @@ object CustomKeyboardManager {
             val forwarded = MotionEvent.obtain(event)
             forwarded.setLocation(
                 event.rawX - location[0],
-                event.rawY - location[1]
+                event.rawY - location[1],
             )
             dispatchTouchEvent(forwarded)
             forwarded.recycle()
@@ -372,7 +449,7 @@ object CustomKeyboardManager {
             val forwarded = MotionEvent.obtain(event)
             forwarded.setLocation(
                 event.rawX - location[0],
-                event.rawY - location[1]
+                event.rawY - location[1],
             )
             dispatchTouchEvent(forwarded)
             forwarded.recycle()
@@ -391,12 +468,24 @@ object CustomKeyboardManager {
             val density = keyboardView.resources.displayMetrics.density
             return (value * density + 0.5f).toInt()
         }
+
+        private fun isTraditionalNavigation(): Boolean {
+            if (navBottom <= 0) return false
+            return (hostWindow?.let { window ->
+                val rootInsets = ViewCompat.getRootWindowInsets(window.decorView) ?: return@let false
+                rootInsets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom > 0
+            } ?: false) || (
+                ViewCompat.getRootWindowInsets(contentRoot)
+                    ?.getInsets(WindowInsetsCompat.Type.tappableElement())
+                    ?.bottom ?: 0
+                ) > 0
+        }
     }
 
     private class OutsideDismissWindowCallback(
         private val activity: Activity,
         private val delegate: Window.Callback,
-        var options: KeyboardDismissOptions
+        var options: KeyboardDismissOptions,
     ) : Window.Callback {
 
         override fun dispatchTouchEvent(event: MotionEvent): Boolean {

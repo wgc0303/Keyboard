@@ -107,6 +107,10 @@ open class CustomKeyboardEditText @JvmOverloads constructor(
                 R.styleable.CustomKeyboardEditText_ck_letterRowBackgroundColor,
                 defaultStyle.letterRowBackgroundColor
             ),
+            systemNavFillColor = array.getColor(
+                R.styleable.CustomKeyboardEditText_ck_systemNavFillColor,
+                defaultStyle.systemNavFillColor
+            ),
             keyTextColor = array.getColor(
                 R.styleable.CustomKeyboardEditText_ck_keyTextColor,
                 defaultStyle.keyTextColor

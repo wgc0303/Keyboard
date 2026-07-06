@@ -39,6 +39,8 @@ internal class CustomKeyboardView(context: Context) : LinearLayout(context) {
     private var style = CustomKeyboardStyle.default(context)
     val keyboardBackgroundColor: Int
         get() = if (keyGap == 0) style.keyboardBackgroundColor else style.spacedKeyboardBackgroundColor
+    val systemNavFillColor: Int
+        get() = style.systemNavFillColor
 
     init {
         orientation = VERTICAL
