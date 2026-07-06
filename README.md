@@ -33,7 +33,7 @@ dependencies {
 如果后续通过 Maven 使用，当前库配置的坐标是：
 
 ```kotlin
-implementation("io.github.wgc0303:keyboard:0.0.1")
+implementation("io.github.wgc0303:keyboard:0.0.2")
 ```
 
 ## 快速开始
@@ -105,6 +105,8 @@ CustomKeyboardManager.installDismissOnOutsideTouch(
 - 页面没有做沉浸式：不需要使用 `EdgeToEdgeHelper`
 - 页面已经有自己的 edge-to-edge / insets 方案：继续沿用你自己的方案即可
 - `Dialog`、自定义 `Dialog`、`BottomSheet` 这类特殊宿主：需要参考 Demo 的 `Window` 绑定方式
+
+当前不把 `PopupWindow` 作为正式支持宿主，未纳入组件库稳定适配范围。
 
 ## `Dialog` / `BottomSheet` 宿主接入
 
